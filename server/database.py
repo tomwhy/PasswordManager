@@ -25,8 +25,13 @@ class LoginCradential:
 
 class Database:
     def __init__(self, username, password, host: str = "localhost", port: int = 3306, database: str = "password_manager"):
-        self.db = mysql.connector.connect(
-            host=host, port=port, user=username, password=password, database=database)
+        self.db: mysql.connector.MySQLConnection = None
+        try:
+            self.db = mysql.connector.connect(
+                host=host, port=port, user=username, password=password, database=database)
+        except mysql.connector.errors.InterfaceError:
+            raise ConnectionRefusedError(
+                "Connection to database refused ({}:{})".format(host, port))
 
         self.cursor = self.db.cursor()
         self.__create_tables()
@@ -35,7 +40,7 @@ class Database:
         self.cursor.execute(r"""CREATE TABLE IF NOT EXISTS users (
             id INT PRIMARY KEY AUTO_INCREMENT,
             username VARCHAR(100) NOT NULL UNIQUE,
-            password BLOB NOT NULL,
+            password BLOB NOT NULL
         );""")
 
         self.cursor.execute(r"""CREATE TABLE IF NOT EXISTS logins (
@@ -48,9 +53,6 @@ class Database:
         );""")
 
         self.db.commit()
-
-    def __del__(self):
-        self.db.close()
 
     def add_login(self, owner_id: int, password: bytes, username: str = None, domain: str = None):
         self.cursor.execute(r"INSERT INTO logins (domain, username, password, owner_id) VALUES (%s, %s, %s, %s)",
@@ -89,12 +91,12 @@ class Database:
             self.db.commit()
         except Exception:
             raise AuthenticationError("username already exists")
-        
+
         self.cursor.execute(
             r"SELECT id FROM users WHERE username=%s", (username,))
         return self.cursor.fetchone()[0]
 
-    def compere_passwords(self, username: str, password: bytes) -> bool:
+    def compere_passwords(self, username: str, password: bytes) -> int:
         self.cursor.execute(
             r"SELECT password, id FROM users WHERE username=%s", (username, ))
         db_password, user_id = self.cursor.fetchone()
