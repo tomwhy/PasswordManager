@@ -25,31 +25,29 @@ class LoginCradential:
 
 class Database:
     def __init__(self, username, password, host: str = "localhost", port: int = 3306, database: str = "password_manager"):
-        """
-        database is expected to be with the following tables:
-        logins (
-            id INT AUTO_INCREAMENT,
-            domain TEXT,
-            username TEXT,
-            password BLOB NOT NULL,
-            owner_id INT NOT NULL,
-            PRIMARY KEY (id),
-            FOREIGN KEY (owner_id) REFERENCES users(id)
-        )
-
-        users (
-            id INT AUTO_INCREAMENT,
-            username TEXT NOT NULL UNIQUE,
-            password BLOB NOT NULL,
-            PRIMARY KEY (id)
-        )
-
-        """
-
         self.db = mysql.connector.connect(
             host=host, port=port, user=username, password=password, database=database)
 
         self.cursor = self.db.cursor()
+        self.__create_tables()
+
+    def __create_tables(self):
+        self.cursor.execute(r"""CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(100) NOT NULL UNIQUE,
+            password BLOB NOT NULL,
+        );""")
+
+        self.cursor.execute(r"""CREATE TABLE IF NOT EXISTS logins (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            domain TEXT,
+            username TEXT,
+            password BLOB NOT NULL,
+            owner_id INT NOT NULL,
+            FOREIGN KEY (owner_id) REFERENCES users(id)
+        );""")
+
+        self.db.commit()
 
     def __del__(self):
         self.db.close()
