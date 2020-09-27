@@ -25,5 +25,5 @@ yarn-error.log*
 .venv
 flask_session/
 __pycache__/
-.vscode
+.vscode/
 *.pem

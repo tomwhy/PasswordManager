@@ -26,17 +26,6 @@ with open(CONFIG_PATH) as config_file:
         exit(1)
 
 
-@app.route('/set/')
-def set():
-    flask.session['key'] = 'value'
-    return 'ok'
-
-
-@app.route('/get/')
-def get():
-    return flask.session.get('key', 'not set')
-
-
 @app.route("/password", methods=["POST"])
 def add_password():
     """
