@@ -4,12 +4,23 @@ import mysql.connector
 import itertools
 
 
+class AuthenticationError(Exception):
+    pass
+
+
 @dataclasses.dataclass
 class LoginCradential:
     domain: str
     password: bytes
     username: str
     _id: int
+
+    def to_json(self):
+        return {
+            "domain": self.domain,
+            "password": self.password,
+            "username": self.username
+        }
 
 
 class Database:
@@ -18,7 +29,7 @@ class Database:
         database is expected to be with the following tables:
         logins (
             id INT AUTO_INCREAMENT,
-            domain TEXT NOT NULL,
+            domain TEXT,
             username TEXT,
             password BLOB NOT NULL,
             owner_id INT NOT NULL,
@@ -43,7 +54,7 @@ class Database:
     def __del__(self):
         self.db.close()
 
-    def add_login(self, owner_id: int, domain: str, password: bytes, username: str = None):
+    def add_login(self, owner_id: int, password: bytes, username: str = None, domain: str = None):
         self.cursor.execute(r"INSERT INTO logins (domain, username, password, owner_id) VALUES (%s, %s, %s, %s)",
                             (domain, username, password, owner_id))
         self.db.commit()
@@ -68,18 +79,33 @@ class Database:
 
         return [LoginCradential(*row) for row in self.cursor.fetchall()]
 
-    def register_user(self, username: str, password: bytes):
+    def register_user(self, username: str, password: bytes) -> int:
+        """
+        register a user and returns their id.
+        throws an exception if registration fails
+        """
+
+        try:
+            self.cursor.execute(
+                r"INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
+            self.db.commit()
+        except Exception:
+            raise AuthenticationError("username already exists")
+        
         self.cursor.execute(
-            r"INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
-        self.db.commit()
+            r"SELECT id FROM users WHERE username=%s", (username,))
+        return self.cursor.fetchone()[0]
 
     def compere_passwords(self, username: str, password: bytes) -> bool:
         self.cursor.execute(
-            r"SELECT password FROM users WHERE username=%s", (username, ))
-        db_password = self.cursor.fetchone()[0]
+            r"SELECT password, id FROM users WHERE username=%s", (username, ))
+        db_password, user_id = self.cursor.fetchone()
 
         password_match = True
         for pass_char, db_char in zip(password, db_password):
             password_match = password_match and pass_char == db_char
 
-        return password_match
+        if not password_match:
+            raise AuthenticationError("Username or password are inccorect")
+
+        return user_id
