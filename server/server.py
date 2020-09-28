@@ -1,19 +1,21 @@
 import flask
 import database
 import json
-import random
-import os
 import collections
-import hashlib
 import flask_httpauth
 import sys
-from flask_app import app
+import hashlib
+import string
+import random
 
 CONFIG_PATH = "config.json"
 
 HTTP_UNAUTHORIZED = 401
 HTTP_BAD_REQUEST = 400
 HTTP_OK_EMPTY = 204
+
+app = flask.Flask(__name__)
+auth = flask_httpauth.HTTPBasicAuth()
 
 # create a server side session so the challenge wont be captured
 with open(CONFIG_PATH) as config_file:
@@ -26,40 +28,42 @@ with open(CONFIG_PATH) as config_file:
         exit(1)
 
 
-@app.route("/password", methods=["POST"])
-def add_password():
-    """
-    adds a password to the database.
-    the password would be added to the logged user
-    """
-    if "owner" not in flask.session:
-        return "You are not authenticated", HTTP_UNAUTHORIZED
-
-    arguments = collections.defaultdict(lambda: None,  flask.request.form)
-    db.add_login(flask.session["owner"], arguments["password"],  # TODO: encrypt password using the owner's hashed password
-                 arguments["username"], arguments["domain"])
-    return "", HTTP_OK_EMPTY
+@auth.verify_password
+def verify(username, password):
+    try:
+        return db.validate_password(username, hash_password(username, password))
+    except database.AuthenticationError:
+        return None
 
 
-@app.route("/password", methods=["GET"])
-def get_password():
-    if "owner" not in flask.session:
-        return "You are not authenticated", HTTP_UNAUTHORIZED
-
-    arguments = collections.defaultdict(lambda: None, flask.request.args)
-    cradentials = db.get_logins(
-        flask.session["owner"], arguments["username"], arguments["domain"])
-    # TODO: decrypt the password
-    return flask.jsonify([cradential.to_json() for cradential in cradentials])
+@app.route("/logins", methods=["POST", "GET"])
+@auth.login_required
+def logins():
+    if flask.request.method == "POST":
+        arguments = collections.defaultdict(lambda: None,  flask.request.form)
+        db.add_login(auth.current_user(), arguments["password"],  # TODO: encrypt password using the owner's hashed password
+                     arguments["username"], arguments["domain"])
+        return "", HTTP_OK_EMPTY
+    else:
+        arguments = collections.defaultdict(lambda: None, flask.request.args)
+        cradentials = db.get_logins(
+            auth.current_user(), arguments["username"], arguments["domain"])
+        # TODO: decrypt the password
+        return flask.jsonify([cradential.to_json() for cradential in cradentials])
 
 
 @app.route("/register", methods=["POST"])
 def register():
-    pass
+    #TODO: implement the rest of the function
+    db.register_user(flask.request.form["username"], hash_password(
+        flask.request.form["username"], flask.request.form["password"]))
 
 
-def add_user_to_session(user_id):
-    pass  # TODO: incoporate JWT into the session
+def hash_password(username: str, password: str) -> bytes:
+    seed = sum(hashlib.sha256(username).digest())
+    salt = "".join(random.Random(seed).choices(
+        string.ascii_letters + string.digits, k=32))
+    return hashlib.sha512(password + salt)
 
 
 if __name__ == "__main__":

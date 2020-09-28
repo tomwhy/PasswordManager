@@ -2,10 +2,12 @@ import dataclasses
 from typing import Dict, List
 import mysql.connector
 import itertools
-
+import hashlib
+import secrets
 
 class AuthenticationError(Exception):
-    pass
+    def __init__(self, msg):
+        super().__init__(msg)
 
 
 @dataclasses.dataclass
@@ -79,12 +81,11 @@ class Database:
 
         return [LoginCradential(*row) for row in self.cursor.fetchall()]
 
-    def register_user(self, username: str, password: bytes) -> int:
+    def register_user(self, username: str, password: bytes) -> bool:
         """
         register a user and returns their id.
         throws an exception if registration fails
         """
-
         try:
             self.cursor.execute(
                 r"INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
@@ -94,18 +95,16 @@ class Database:
 
         self.cursor.execute(
             r"SELECT id FROM users WHERE username=%s", (username,))
-        return self.cursor.fetchone()[0]
 
-    def compere_passwords(self, username: str, password: bytes) -> int:
+    def validate_password(self, username: str, password: bytes) -> int:
         self.cursor.execute(
             r"SELECT password, id FROM users WHERE username=%s", (username, ))
+        if self.cursor.rowcount == 0:
+            raise AuthenticationError("invalid username or password")
+
         db_password, user_id = self.cursor.fetchone()
 
-        password_match = True
-        for pass_char, db_char in zip(password, db_password):
-            password_match = password_match and pass_char == db_char
-
-        if not password_match:
-            raise AuthenticationError("Username or password are inccorect")
+        if not secrets.compare_digest(password, db_password):
+            raise AuthenticationError("invalid username or password")
 
         return user_id
