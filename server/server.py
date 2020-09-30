@@ -17,7 +17,7 @@ HTTP_OK_EMPTY = 204
 app = flask.Flask(__name__)
 auth = flask_httpauth.HTTPBasicAuth()
 
-# create a server side session so the challenge wont be captured
+
 with open(CONFIG_PATH) as config_file:
     mysql_config = json.load(config_file)["mysql"]
     try:
@@ -41,23 +41,26 @@ def verify(username, password):
 def logins():
     if flask.request.method == "POST":
         arguments = collections.defaultdict(lambda: None,  flask.request.form)
-        db.add_login(auth.current_user(), arguments["password"],  # TODO: encrypt password using the owner's hashed password
+        db.add_login(auth.current_user(), arguments["password"],
                      arguments["username"], arguments["domain"])
         return "", HTTP_OK_EMPTY
     else:
         arguments = collections.defaultdict(lambda: None, flask.request.args)
         cradentials = db.get_logins(
             auth.current_user(), arguments["username"], arguments["domain"])
-        # TODO: decrypt the password
         return flask.jsonify([cradential.to_json() for cradential in cradentials])
 
 
 @app.route("/register", methods=["POST"])
 def register():
-    #TODO: implement the rest of the function
-    db.register_user(flask.request.form["username"], hash_password(
-        flask.request.form["username"], flask.request.form["password"]))
-
+    try:
+        db.register_user(flask.request.form["username"], hash_password(
+            flask.request.form["username"], flask.request.form["password"]))
+    except KeyError:
+        return "Username and password are required", HTTP_BAD_REQUEST
+    except database.AuthenticationError:
+        return "Username already exists", HTTP_BAD_REQUEST
+    return "", HTTP_OK_EMPTY
 
 def hash_password(username: str, password: str) -> bytes:
     seed = sum(hashlib.sha256(username).digest())
