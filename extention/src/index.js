@@ -1,17 +1,58 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import React from "react";
+import ReactDom from "react-dom";
+import "./signin";
+import SignIn from "./signin";
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+const SERVER_IP = "127.0.0.1";
+const SERVER_PORT = 9000;
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { loggedIn: false, errorMsg: "" };
+    this.authenticate = this.authenticate.bind(this);
+  }
+
+  authenticate(username, password, register) {
+    if (username === "") {
+      this.setState({ errorMsg: "Username field is required" });
+      return;
+    }
+
+    if (password === "") {
+      this.setState({ errorMsg: "Password field is required" });
+      return;
+    }
+
+    if (register) {
+    }
+
+    fetch(`https://${SERVER_IP}:${SERVER_PORT}/logins`, {
+      headers: {
+        "WWW-Authenticate": `Basic ${Buffer.from(
+          `${username}:${password}`
+        ).toString("base64")}`,
+      },
+    })
+      .then((res) => {
+        if (res.ok) {
+          this.setState({ loggedIn: true });
+          console.log(res.json());
+        } else if (res.status === 401) {
+          this.setState({ errorMsg: "Username or password are incorrect" });
+          console.log(res);
+        }
+      })
+      .catch((error) => {
+        this.setState({ errorMsg: "Could not connect to server" });
+      });
+  }
+
+  render() {
+    return (
+      <SignIn error={this.state.errorMsg} setCrandials={this.authenticate} />
+    );
+  }
+}
+
+ReactDom.render(<App />, document.getElementById("root"));

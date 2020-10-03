@@ -1,0 +1,13 @@
+div.signInForm {
+  display: grid;
+  gap: 15px;
+  text-align: center;
+  grid-template-columns: auto auto;
+  width: 100px;
+  height: 100px;
+  margin: 15% 35%;
+}
+
+div.errorMsg {
+  grid-column: 1/3;
+}

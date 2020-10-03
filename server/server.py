@@ -7,6 +7,7 @@ import sys
 import hashlib
 import string
 import random
+import flask_cors
 
 CONFIG_PATH = "config.json"
 
@@ -15,11 +16,14 @@ HTTP_BAD_REQUEST = 400
 HTTP_OK_EMPTY = 204
 
 app = flask.Flask(__name__)
+flask_cors.CORS(app)
 auth = flask_httpauth.HTTPBasicAuth()
 
 
 with open(CONFIG_PATH) as config_file:
-    mysql_config = json.load(config_file)["mysql"]
+    config = json.load(config_file)
+    mysql_config = config["mysql"]
+    api_port = config["api"]["port"]
     try:
         db = database.Database(
             mysql_config["username"], mysql_config["password"], mysql_config["host"], mysql_config["port"])
@@ -62,14 +66,15 @@ def register():
         return "Username already exists", HTTP_BAD_REQUEST
     return "", HTTP_OK_EMPTY
 
+
 def hash_password(username: str, password: str) -> bytes:
-    seed = sum(hashlib.sha256(username).digest())
+    seed = sum(hashlib.sha256(username.encode()).digest())
     salt = "".join(random.Random(seed).choices(
         string.ascii_letters + string.digits, k=32))
-    return hashlib.sha512(password + salt)
+    return hashlib.sha512((password + salt).encode())
 
 
 if __name__ == "__main__":
     # in order to generate a self signed certificate (for the scope of this project is good enough) you can run
     # openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem
-    app.run(ssl_context=("cert.pem", "key.pem"))
+    app.run(ssl_context=("cert.pem", "key.pem"), port=api_port)

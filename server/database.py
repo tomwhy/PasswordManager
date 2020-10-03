@@ -5,6 +5,7 @@ import itertools
 import hashlib
 import secrets
 
+
 class AuthenticationError(Exception):
     def __init__(self, msg):
         super().__init__(msg)
@@ -99,10 +100,13 @@ class Database:
     def validate_password(self, username: str, password: bytes) -> int:
         self.cursor.execute(
             r"SELECT password, id FROM users WHERE username=%s", (username, ))
-        if self.cursor.rowcount == 0:
+
+        row = self.cursor.fetchone()
+
+        if row is None:
             raise AuthenticationError("invalid username or password")
 
-        db_password, user_id = self.cursor.fetchone()
+        db_password, user_id = row
 
         if not secrets.compare_digest(password, db_password):
             raise AuthenticationError("invalid username or password")
