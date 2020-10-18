@@ -1,12 +1,29 @@
 import React from "react";
 import "./signin.css";
 
+/*global chrome*/
 class SignIn extends React.Component {
   constructor(props) {
     super(props);
     this.state = { username: "", password: "" };
 
     this.onChange = this.onChange.bind(this);
+    this.storageLogin();
+  }
+
+  storageLogin() {
+    chrome.storage.sync.get("user", (user) => {
+      if (user.user === "") {
+        return;
+      }
+      chrome.storage.sync.get("pass", (pass) => {
+        if (pass.pass === "") {
+          return;
+        }
+
+        this.props.setCredentials(user.user, pass.pass, false);
+      });
+    });
   }
 
   onChange(e) {
@@ -14,13 +31,9 @@ class SignIn extends React.Component {
   }
 
   render() {
-    let errorMsg = <p></p>;
-    if (this.props.error !== undefined) {
-      errorMsg = <p style={{ color: "red" }}>{this.props.error}</p>;
-    }
-
     return (
       <div>
+        {this.props.error}
         <div class="signInForm">
           <label>username:</label>
           <input
@@ -39,7 +52,7 @@ class SignIn extends React.Component {
           <button
             class="signIn"
             onClick={(e) =>
-              this.props.setCrandials(
+              this.props.setCredentials(
                 this.state.username,
                 this.state.password,
                 false
@@ -51,7 +64,7 @@ class SignIn extends React.Component {
           <button
             class="register"
             onClick={(e) =>
-              this.props.setCrandials(
+              this.props.setCredentials(
                 this.state.username,
                 this.state.password,
                 true
@@ -60,7 +73,6 @@ class SignIn extends React.Component {
           >
             Register
           </button>
-          <div class="errorMsg">{errorMsg}</div>
         </div>
       </div>
     );

@@ -1,0 +1,14 @@
+.modal.addLogin {
+  border: 2px solid black;
+  background-color: white;
+  text-align: center;
+  box-sizing: content-box;
+  padding: 0 15px;
+}
+
+.addLoginForm {
+  display: grid;
+  gap: 15px;
+  text-align: center;
+  grid-template-columns: auto auto;
+}

@@ -7,7 +7,9 @@ import sys
 import hashlib
 import string
 import random
+import secrets
 import flask_cors
+import jwt
 
 CONFIG_PATH = "config.json"
 
@@ -16,17 +18,14 @@ HTTP_BAD_REQUEST = 400
 HTTP_OK_EMPTY = 204
 
 app = flask.Flask(__name__)
-flask_cors.CORS(app)
+flask_cors.CORS(app, supports_credentials=True)
 auth = flask_httpauth.HTTPBasicAuth()
-
 
 with open(CONFIG_PATH) as config_file:
     config = json.load(config_file)
-    mysql_config = config["mysql"]
     api_port = config["api"]["port"]
     try:
-        db = database.Database(
-            mysql_config["username"], mysql_config["password"], mysql_config["host"], mysql_config["port"])
+        db = database.Database(config["sql"]["path"])
     except ConnectionRefusedError:
         print("Could not connected to database", file=sys.stderr)
         exit(1)
@@ -45,14 +44,23 @@ def verify(username, password):
 def logins():
     if flask.request.method == "POST":
         arguments = collections.defaultdict(lambda: None,  flask.request.form)
-        db.add_login(auth.current_user(), arguments["password"],
-                     arguments["username"], arguments["domain"])
+
+        if "id" in flask.request.form:
+            try:
+                db.change_login(auth.current_user(), arguments["id"], arguments["username"], arguments["password"],
+                                arguments["iv"], arguments["domain"])
+            except RuntimeError as e:
+                return str(e), HTTP_BAD_REQUEST
+        else:
+            db.add_login(auth.current_user(), arguments["password"], arguments["iv"],
+                         arguments["username"], arguments["domain"])
+
         return "", HTTP_OK_EMPTY
     else:
         arguments = collections.defaultdict(lambda: None, flask.request.args)
-        cradentials = db.get_logins(
+        credentials = db.get_logins(
             auth.current_user(), arguments["username"], arguments["domain"])
-        return flask.jsonify([cradential.to_json() for cradential in cradentials])
+        return flask.jsonify([credential.to_json() for credential in credentials])
 
 
 @app.route("/register", methods=["POST"])
@@ -71,7 +79,7 @@ def hash_password(username: str, password: str) -> bytes:
     seed = sum(hashlib.sha256(username.encode()).digest())
     salt = "".join(random.Random(seed).choices(
         string.ascii_letters + string.digits, k=32))
-    return hashlib.sha512((password + salt).encode())
+    return hashlib.sha512((password + salt).encode()).digest()
 
 
 if __name__ == "__main__":

@@ -1,9 +1,6 @@
 {
-  "mysql": {
-    "host": "localhost",
-    "port": 3306,
-    "username": "root",
-    "password": "password"
+  "sql": {
+    "path": "database.db"
   },
   "api": {
     "port": 9000

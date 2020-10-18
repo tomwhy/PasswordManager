@@ -27,3 +27,7 @@ flask_session/
 __pycache__/
 .vscode/
 *.pem
+
+.vs/
+debug.log
+*.db
