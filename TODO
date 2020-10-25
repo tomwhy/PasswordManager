@@ -1,0 +1,23 @@
+Server:
+    ✔ Reinstall venv for python3.9 @done(20-10-18 21:36)
+    ✔ watch https://www.youtube.com/watch?v=cYWiDiIUxQc&list=PL-osiE80TeTs4UjLw5MM6OjgkjFeUxCYH&index=4 @critical @done(20-10-19 10:00)
+    ✔ switch to SQLAlchemy @high @done(20-10-19 17:23)
+    ☐ add a script to create a clean database
+    ☐ switch to MySQL
+    ✔ Add Login request to the API. @done(20-10-19 18:02)
+    ✔ replace basic auth to JWT authentication. @high @done(20-10-19 18:02)
+    ☐ create a docker image
+    ☐ verify that the username-domain-owner combination is unique
+
+Extention:
+    ☐ use react-routes @low
+    ✘ create RSA private and public keys and use thouse to encrypt the passwords @cancelled(20-10-21 17:16)
+    ✔ save JWT instead of cradentials @done(20-10-21 17:16)
+    ✔ added input checks for the domain, username and password @done(20-10-21 17:30)
+    ☐ Create a seperate form for registration.
+    ☐ create a generic message pop-up @low
+    ☐ detect when a new password is entere
+    ☐ autofill
+    ☐ learn css with css bootstrap
+    ☐ add css
+    ☐ add animated loading screen (when waiting for promises)

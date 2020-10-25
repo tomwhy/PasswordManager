@@ -1,82 +1,73 @@
 import React from "react";
+import Form from "./Form.js";
 import "./signin.css";
 
 /*global chrome*/
-class SignIn extends React.Component {
+class LoginIn extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { username: "", password: "" };
+    this.state = { error: undefined };
 
     this.onChange = this.onChange.bind(this);
-    this.storageLogin();
+    //this.storageLogin();
   }
 
   storageLogin() {
-    chrome.storage.sync.get("user", (user) => {
-      if (user.user === "") {
+    chrome.storage.sync.get("token", (data) => {
+      if (data.token === undefined) {
         return;
       }
-      chrome.storage.sync.get("pass", (pass) => {
-        if (pass.pass === "") {
+      chrome.storage.sync.get("key", (keyData) => {
+        if (keyData.key === undefined) {
           return;
         }
 
-        this.props.setCredentials(user.user, pass.pass, false);
+        this.props.setToken(data.token, keyData.key);
       });
     });
   }
 
-  onChange(e) {
+  onChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
-  }
+  };
+
+  signIn = (credintails) => {
+    this.props.signIn(credintails.username, credintails.password);
+  };
+
+  signUp = (credintails) => {
+    console.log(this.props);
+    this.props.signUp(
+      credintails.username,
+      credintails.email,
+      credintails.password
+    );
+  };
 
   render() {
     return (
       <div>
         {this.props.error}
-        <div class="signInForm">
-          <label>username:</label>
-          <input
-            type="text"
-            value={this.state.username}
-            onChange={this.onChange}
-            name="username"
-          ></input>
-          <label>password:</label>
-          <input
-            type="password"
-            value={this.state.password}
-            onChange={this.onChange}
-            name="password"
-          ></input>
-          <button
-            class="signIn"
-            onClick={(e) =>
-              this.props.setCredentials(
-                this.state.username,
-                this.state.password,
-                false
-              )
-            }
-          >
-            Sign In
-          </button>
-          <button
-            class="register"
-            onClick={(e) =>
-              this.props.setCredentials(
-                this.state.username,
-                this.state.password,
-                true
-              )
-            }
-          >
-            Register
-          </button>
-        </div>
+        <Form onSubmit={this.signIn}>
+          <label>Username: </label>
+          <input name="username" type="text" />
+          <label>Password: </label>
+          <input name="password" type="password" />
+          <input type="submit" value="Log In" />
+        </Form>
+
+        <Form onSubmit={this.signUp}>
+          <label>Username: </label>
+          <input name="username" type="text" />
+          <label>Email: </label>
+          <input name="email" type="email" />
+          <label>Password: </label>
+          <input name="password" type="password" />
+          <input type="submit" value="Register" />
+        </Form>
       </div>
     );
   }
 }
 
-export default SignIn;
+export default LoginIn;

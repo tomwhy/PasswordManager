@@ -85,10 +85,28 @@ class AddLoginWindow extends React.Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
+  areInputValid() {
+    if (!/.+/.test(this.state.password)) {
+      throw Error("Password must not be empty");
+    }
+
+    if (
+      this.state.domain !== "" &&
+      !/(?:https?:\/\/)?[\w.-]+(?:\.[\w.-]+)[\w$\-_.+!*'(),",?;\/:@=&]*/.test(
+        this.state.domain
+      )
+    ) {
+      throw Error("Invalid URL");
+    }
+  }
+
   onSubmit(e) {
     e.preventDefault();
-    if (this.state.password === "") {
-      this.setState({ error: "Password must not be empty" });
+
+    try {
+      this.areInputValid();
+    } catch (e) {
+      this.setState({ error: e.message });
       return;
     }
 
@@ -199,6 +217,7 @@ class Logins extends React.Component {
       <table>
         <tbody>
           {logins.map((l) => {
+            console.log(l);
             return (
               <tr key={l.id}>
                 <td>
@@ -207,6 +226,7 @@ class Logins extends React.Component {
                     api={this.props.api}
                     time={1.5}
                     onLoginEdited={() => {
+                      debugger;
                       this.getLogins()
                         .then((res) => this.setState({ tableContent: res }))
                         .catch((e) =>

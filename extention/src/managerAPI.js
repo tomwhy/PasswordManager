@@ -6,61 +6,69 @@ class ManagerApi {
   API_URL = `https://127.0.0.1:9000`;
 
   constructor() {
-    this.auth = "";
-    this.key = "";
+    this.token = "";
+    this.key = undefined;
+  }
+
+  async setToken(token, key) {
+    let success = await fetch(`${this.API_URL}/logins`, {
+      method: "HEAD",
+      Authorization: `Bearer ${token}`,
+    })
+      .then((res) => res.ok)
+      .catch((e) => {
+        throw e;
+      });
+
+    if (success) {
+      this.token = token;
+      this.key = key;
+    } else {
+      chrome.storage.sync.set({ token: undefined });
+    }
+
+    return success;
+  }
+
+  generateKey(username, password) {
+    return crypto
+      .createHash("sha256")
+      .update(password + username)
+      .digest();
   }
 
   async login(username, password) {
-    console.log(username);
-    console.log(password);
-    this.auth = `Basic ${Buffer.from(`${username}:${password}`).toString(
-      "base64"
-    )}`;
+    let body = new FormData();
+    body.append("username", username);
+    body.append("password", password);
 
-    return await this.authenticate()
-      .then((auth) => {
-        if (!auth) {
-          this.auth = "";
-          return false;
+    return await fetch(`${this.API_URL}/login`, {
+      method: "POST",
+      body: body,
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          this.token = await res.text();
+          this.key = this.generateKey(username, password);
+          return true;
+        } else if (res.status === 409) {
+          throw Error("Username or password are incorrect");
         }
-        this.key = crypto.createHash("sha256").update(password).digest();
-
-        chrome.storage.sync.set({ user: username, pass: password });
-
-        return true;
+        throw Error(await res.text());
       })
       .catch((e) => {
-        this.auth = "";
         throw e;
       });
   }
 
-  async authenticate() {
-    return await fetch(`${this.API_URL}/logins`, {
-      headers: {
-        Authorization: `${this.auth}`,
-      },
-      method: "HEAD",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          if (res.status !== 401) throw Error(await res.text());
-          else throw Error("Username or password are incorrect");
-        }
-        return true;
-      })
-      .catch((error) => {
-        throw error;
-      });
-  }
-
   loggedIn() {
-    return this.auth !== "";
+    return this.token !== "";
   }
 
-  async register(username, password) {
+  async register(username, email, password) {
     let data = new FormData();
     data.append("username", username);
+    data.append("email", email);
     data.append("password", password);
     return await fetch(`${this.API_URL}/register`, {
       method: "POST",
@@ -71,7 +79,7 @@ class ManagerApi {
           throw Error(await res.text());
         }
 
-        await this.login(username, password);
+        return await this.login(username, password);
       })
       .catch((e) => {
         throw e;
@@ -96,7 +104,7 @@ class ManagerApi {
         method: "POST",
         body: form,
         headers: {
-          Authorization: `${this.auth}`,
+          Authorization: `Bearer ${this.token}`,
         },
       });
       return res.ok;
@@ -128,7 +136,7 @@ class ManagerApi {
         method: "POST",
         body: form,
         headers: {
-          Authorization: `${this.auth}`,
+          Authorization: `Bearer ${this.token}`,
         },
       });
       return res.ok;
@@ -153,7 +161,7 @@ class ManagerApi {
 
     return await fetch(url, {
       headers: {
-        Authorization: `${this.auth}`,
+        Authorization: `Bearer ${this.token}`,
       },
     })
       .then(async (res) => {
@@ -178,10 +186,10 @@ class ManagerApi {
   }
 
   logout() {
-    this.auth = "";
-    this.key = "";
+    this.token = "";
+    this.key = undefined;
 
-    chrome.storage.sync.set({ user: "", pass: "" });
+    chrome.storage.sync.set({ token: undefined });
   }
 }
 

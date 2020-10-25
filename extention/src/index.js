@@ -1,11 +1,10 @@
 import React from "react";
 import ReactDom from "react-dom";
-import SignIn from "./signin";
+import LogIn from "./signin";
 import ManagerApi from "./managerAPI.js";
 import Logins from "./logins.js";
 import { ErrorWindow } from "./errorWindow";
 
-/*global chrome*/
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -14,7 +13,7 @@ class App extends React.Component {
     this.api = new ManagerApi();
   }
 
-  authenticate = (username, password, register) => {
+  signIn = (username, password) => {
     if (username === "") {
       this.setState({ errorMsg: "Username field is required" });
       return;
@@ -25,20 +24,58 @@ class App extends React.Component {
       return;
     }
 
-    var promise;
-
-    if (register) {
-      promise = this.api.register(username, password);
-    } else {
-      promise = this.api.login(username, password);
-    }
-
-    promise
+    this.api
+      .login(username, password)
       .then((success) => {
         if (!success) {
           this.setState({ errorMsg: "Username Or Password are incorrect" });
           return;
         }
+        this.setState({ loggedIn: this.api.loggedIn() });
+      })
+      .catch((e) => {
+        this.setState({ errorMsg: e.message });
+      });
+
+    //TODO: set state here to loading
+  };
+
+  signUp = (username, email, password) => {
+    if (username === "") {
+      this.setState({ errorMsg: "Username field is required" });
+      return;
+    }
+
+    if (email === "") {
+      this.setState({ errorMsg: "Email field is required" });
+      return;
+    }
+
+    if (password === "") {
+      this.setState({ errorMsg: "Password field is required" });
+      return;
+    }
+
+    this.api
+      .register(username, email, password)
+      .then((success) => {
+        if (!success) {
+          this.setState({ errorMsg: "There was a problem registering" });
+          return;
+        }
+        this.setState({ loggedIn: this.api.loggedIn() });
+      })
+      .catch((e) => {
+        this.setState({ errorMsg: e.message });
+      });
+
+    //TODO: set state here to loading
+  };
+
+  setToken = (token, key) => {
+    this.api
+      .setToken(token, key)
+      .then((res) => {
         this.setState({ loggedIn: this.api.loggedIn() });
       })
       .catch((e) => {
@@ -51,7 +88,6 @@ class App extends React.Component {
   };
 
   onLogout = () => {
-    console.log("Here");
     this.api.logout();
     this.setState({ loggedIn: this.api.loggedIn() });
   };
@@ -65,7 +101,12 @@ class App extends React.Component {
     return this.state.loggedIn ? (
       <Logins api={this.api} onLogout={this.onLogout} />
     ) : (
-      <SignIn error={error} setCredentials={this.authenticate} />
+      <LogIn
+        error={error}
+        signIn={this.signIn}
+        signUp={this.signUp}
+        setToken={(token) => this.setToken(token)}
+      />
     );
   }
 }
