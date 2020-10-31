@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Popup from "reactjs-popup";
 import { ErrorWindow } from "./errorWindow.js";
 import { Base64 } from "./base64.mjs";
@@ -217,7 +217,6 @@ class Logins extends React.Component {
       <table>
         <tbody>
           {logins.map((l) => {
-            console.log(l);
             return (
               <tr key={l.id}>
                 <td>

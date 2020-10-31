@@ -14,7 +14,7 @@ Extention:
     ✘ create RSA private and public keys and use thouse to encrypt the passwords @cancelled(20-10-21 17:16)
     ✔ save JWT instead of cradentials @done(20-10-21 17:16)
     ✔ added input checks for the domain, username and password @done(20-10-21 17:30)
-    ☐ Create a seperate form for registration.
+    ✔ Create a seperate form for registration. @done(20-10-28 07:29)
     ☐ create a generic message pop-up @low
     ☐ detect when a new password is entere
     ☐ autofill

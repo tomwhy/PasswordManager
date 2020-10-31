@@ -9,7 +9,7 @@ class LoginIn extends React.Component {
     this.state = { error: undefined };
 
     this.onChange = this.onChange.bind(this);
-    //this.storageLogin();
+    this.storageLogin();
   }
 
   storageLogin() {
@@ -22,7 +22,7 @@ class LoginIn extends React.Component {
           return;
         }
 
-        this.props.setToken(data.token, keyData.key);
+        this.props.setToken(data.token, JSON.parse(keyData.key));
       });
     });
   }
@@ -36,7 +36,6 @@ class LoginIn extends React.Component {
   };
 
   signUp = (credintails) => {
-    console.log(this.props);
     this.props.signUp(
       credintails.username,
       credintails.email,

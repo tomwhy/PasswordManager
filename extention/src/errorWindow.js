@@ -10,8 +10,6 @@ export function ErrorWindow(props) {
     setOpen(false);
   };
 
-  console.log(props.nested);
-
   return (
     <Popup
       open={open}

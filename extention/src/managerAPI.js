@@ -13,18 +13,23 @@ class ManagerApi {
   async setToken(token, key) {
     let success = await fetch(`${this.API_URL}/logins`, {
       method: "HEAD",
-      Authorization: `Bearer ${token}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then((res) => res.ok)
       .catch((e) => {
+        chrome.storage.sync.set({ token: undefined, key: undefined });
         throw e;
       });
 
     if (success) {
+      console.log(token);
+      console.log(key);
       this.token = token;
-      this.key = key;
+      this.key = key.data;
     } else {
-      chrome.storage.sync.set({ token: undefined });
+      chrome.storage.sync.set({ token: undefined, key: undefined });
     }
 
     return success;
@@ -50,6 +55,10 @@ class ManagerApi {
         if (res.ok) {
           this.token = await res.text();
           this.key = this.generateKey(username, password);
+          chrome.storage.sync.set({
+            token: this.token,
+            key: JSON.stringify(this.key),
+          });
           return true;
         } else if (res.status === 409) {
           throw Error("Username or password are incorrect");

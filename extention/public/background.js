@@ -1,9 +1,11 @@
 chrome.runtime.onInstalled.addListener(function () {
-  chrome.storage.sync.set({ user: "", pass: "" });
+  chrome.storage.sync.set({ token: undefined, key: undefined });
 });
 
 chrome.browserAction.onClicked.addListener(function () {
-  chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });
+  chrome.tabs.create({
+    url: chrome.runtime.getURL("index/passManagerExtention.ext"),
+  });
 });
 
 chrome.runtime.onMessage.addListener(function (request, sender, callback) {

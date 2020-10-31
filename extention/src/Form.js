@@ -23,7 +23,6 @@ class Form extends React.Component {
   }
 
   onChange = (e) => {
-    console.log(e.target);
     if (e.target.name !== undefined) {
       this.setState({ [e.target.name]: e.target.value });
     }
