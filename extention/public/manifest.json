@@ -2,12 +2,23 @@
   "manifest_version": 2,
   "name": "Password Manager",
   "version": "0.1",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "activeTab"],
   "background": {
     "scripts": ["background.js"],
     "presistent": false
   },
   "browser_action": {
     "default_title": "Password Manager"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "/static/js/2.chunk.js",
+        "/static/js/main.chunk.js",
+        "/static/js/runtime-main.js"
+      ],
+      "css": ["/static/css/main.chunk.css"]
+    }
+  ]
 }

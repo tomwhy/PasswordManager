@@ -24,8 +24,6 @@ class ManagerApi {
       });
 
     if (success) {
-      console.log(token);
-      console.log(key);
       this.token = token;
       this.key = key.data;
     } else {

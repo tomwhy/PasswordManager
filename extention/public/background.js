@@ -4,7 +4,7 @@ chrome.runtime.onInstalled.addListener(function () {
 
 chrome.browserAction.onClicked.addListener(function () {
   chrome.tabs.create({
-    url: chrome.runtime.getURL("index/passManagerExtention.ext"),
+    url: chrome.runtime.getURL("index.html"),
   });
 });
 
