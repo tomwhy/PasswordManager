@@ -37,7 +37,7 @@ def logins():
                 models.Credential.update(auth.current_user(), arguments["id"], arguments["username"], arguments["domain"], arguments["password"],
                                          arguments["iv"])
             except RuntimeError as e:
-                return flask.abort(HTTP_BAD_REQUEST, description=str(e))
+                return str(e), HTTP_BAD_REQUEST
         else:
             models.Credential.create(auth.current_user(), arguments["password"], arguments["iv"],
                                      arguments["username"], arguments["domain"])
@@ -56,9 +56,9 @@ def register():
         models.User.create(flask.request.form["username"], hash_password(
             flask.request.form["username"], flask.request.form["password"]), flask.request.form["email"])
     except KeyError:
-        return flask.abort(HTTP_BAD_REQUEST, description="all fields are required  are required")
+        return "all fields are required", HTTP_BAD_REQUEST
     except models.AuthenticationError as e:
-        return flask.abort(HTTP_BAD_REQUEST, description=str(e))
+        return str(e), HTTP_BAD_REQUEST
     return "", HTTP_OK_EMPTY
 
 
@@ -69,9 +69,9 @@ def login():
         owner = models.User.validate(flask.request.form["username"], hash_password(
             flask.request.form["username"], flask.request.form["password"]))
     except KeyError:
-        return flask.abort(HTTP_BAD_REQUEST, description="Username and password are required")
+        return "Username and password are required", HTTP_BAD_REQUEST
     except models.AuthenticationError as e:
-        return flask.abort(HTTP_CONFLICT, str(e))
+        return str(e), HTTP_CONFLICT
 
     return jwt.encode({
         "user": owner,

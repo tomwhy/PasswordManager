@@ -1,6 +1,5 @@
 import React from "react";
-import Form from "./Form.js";
-import "./signin.css";
+import { Form, Input } from "./form.js";
 
 /*global chrome*/
 class LoginIn extends React.Component {
@@ -45,25 +44,29 @@ class LoginIn extends React.Component {
 
   render() {
     return (
-      <div>
+      <div class="container-fluid mx-auto my-auto">
         {this.props.error}
-        <Form onSubmit={this.signIn}>
-          <label>Username: </label>
-          <input name="username" type="text" />
-          <label>Password: </label>
-          <input name="password" type="password" />
-          <input type="submit" value="Log In" />
-        </Form>
-
-        <Form onSubmit={this.signUp}>
-          <label>Username: </label>
-          <input name="username" type="text" />
-          <label>Email: </label>
-          <input name="email" type="email" />
-          <label>Password: </label>
-          <input name="password" type="password" />
-          <input type="submit" value="Register" />
-        </Form>
+        <div class="row justify-content-center">
+          <div class="col border">
+            <Form onSubmit={this.signIn}>
+              <Input name="username" label="Username:" />
+              <Input name="password" label="Password:" type="password" />
+              <button class="btn btn-primary btn-sm" type="submit">
+                Log In
+              </button>
+            </Form>
+          </div>
+          <div class="col border">
+            <Form onSubmit={this.signUp}>
+              <Input name="username" label="Username:" />
+              <Input name="password" label="Password:" type="password" />
+              <Input name="email" type="email" label="Email:" />
+              <button class="btn btn-primary btn-sm" type="submit">
+                Sign Up
+              </button>
+            </Form>
+          </div>
+        </div>
       </div>
     );
   }

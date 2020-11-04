@@ -2,7 +2,7 @@ import React from "react";
 import Popup from "reactjs-popup";
 import { ErrorWindow } from "./errorWindow.js";
 import { Base64 } from "./base64.mjs";
-import "./logins.css";
+import { Form, Input } from "./form.js";
 
 class LoginEntry extends React.Component {
   constructor(props) {
@@ -13,10 +13,10 @@ class LoginEntry extends React.Component {
     this.domain = null;
 
     if (this.props.login.username !== "") {
-      this.username = <p>Username: {this.props.login.username}</p>;
+      this.username = <span>Username: {this.props.login.username}</span>;
     }
     if (this.props.login.domain !== "") {
-      this.domain = <p>Domain: {this.props.login.domain}</p>;
+      this.domain = <span>Domain: {this.props.login.domain}</span>;
     }
   }
 
@@ -59,12 +59,29 @@ class LoginEntry extends React.Component {
           api={this.props.api}
         />
 
-        <div>
-          {this.username}
-          {this.domain}
+        <div class="row">
+          <div class="col">{this.username}</div>
+          <div class="col">
+            <button
+              onClick={this.onCopyClick}
+              class="btn btn-light float-right d-inline"
+            >
+              Copy Password
+            </button>
+          </div>
         </div>
-        <button onClick={this.onCopyClick}>Copy Password</button>
-        <button onClick={this.onEditClick}>Edit</button>
+        <div class="row">
+          <div class="col">{this.domain}</div>
+          <div class="col">
+            <button
+              onClick={this.onEditClick}
+              class="btn btn-warning float-right d-inline"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+
         {this.state.message === undefined ? null : this.state.message}
       </div>
     );
@@ -76,24 +93,21 @@ class AddLoginWindow extends React.Component {
     super(props);
 
     this.state = {
-      username: props.username,
-      password: props.password,
-      domain: props.domain,
       error: undefined,
     };
 
     this.onSubmit = this.onSubmit.bind(this);
   }
 
-  areInputValid() {
-    if (!/.+/.test(this.state.password)) {
+  areInputValid(username, password, domain) {
+    if (!/.+/.test(password)) {
       throw Error("Password must not be empty");
     }
 
     if (
-      this.state.domain !== "" &&
+      domain !== "" &&
       !/(?:https?:\/\/)?[\w.-]+(?:\.[\w.-]+)[\w$\-_.+!*'(),",?;\/:@=&]*/.test(
-        this.state.domain
+        domain
       )
     ) {
       throw Error("Invalid URL");
@@ -101,32 +115,23 @@ class AddLoginWindow extends React.Component {
   }
 
   onSubmit(e) {
-    e.preventDefault();
-
     try {
-      this.areInputValid();
-    } catch (e) {
-      this.setState({ error: e.message });
+      this.areInputValid(e.username, e.password, e.domain);
+    } catch (err) {
+      this.setState({ error: err.message });
       return;
     }
 
     if (this.props.passId !== undefined) {
       this.props.api
-        .editLogin(
-          this.props.passId,
-          this.state.username,
-          this.state.password,
-          this.state.domain
-        )
-        .catch((e) => {
-          this.setState({ error: e.message, open: true });
+        .editLogin(this.props.passId, e.username, e.password, e.domain)
+        .catch((err) => {
+          this.setState({ error: err.message, open: true });
         });
     } else {
-      this.props.api
-        .addLogin(this.state.username, this.state.password, this.state.domain)
-        .catch((e) => {
-          this.setState({ error: e.message, open: true });
-        });
+      this.props.api.addLogin(e.username, e.password, e.domain).catch((err) => {
+        this.setState({ error: err.message, open: true });
+      });
     }
 
     this.closeWindow(true);
@@ -134,9 +139,6 @@ class AddLoginWindow extends React.Component {
 
   closeWindow = (reload) => {
     this.setState({
-      username: this.props.username,
-      password: this.props.password,
-      domain: this.props.domain,
       error: undefined,
     });
 
@@ -168,87 +170,89 @@ class AddLoginWindow extends React.Component {
         position="center center"
         nested
       >
-        <div class="addLogin modal">
+        <div class="container border border-dark bg-light">
           {errorWindow}
-          <form class="addLoginForm" onSubmit={this.onSubmit}>
-            <label>Username:</label>
-            <input
-              type="text"
+          <Form onSubmit={this.onSubmit}>
+            <Input
               name="username"
-              onChange={this.onChange}
-              value={this.state.username}
+              label="username: "
+              init={this.props.username}
             />
-            <label>Password:</label>
-            <input
-              type="password"
+            <Input
               name="password"
-              onChange={this.onChange}
-              value={this.state.password}
+              type="password"
+              label="password: "
+              init={this.props.password}
             />
-            <label>Domain:</label>
-            <input
-              type="text"
-              name="domain"
-              onChange={this.onChange}
-              value={this.state.domain}
-            />
-            <input type="submit" />
-          </form>
+            <Input name="domain" label="domain: " init={this.props.domain} />
+            <button type="submit" class="btn btn-primary">
+              Add
+            </button>
+          </Form>
         </div>
       </Popup>
     );
   }
 }
 
+const spinner = (
+  <div class="container m-auto">
+    <div class="spinner-border "></div>
+  </div>
+);
+
 class Logins extends React.Component {
+  handlerError = (e) => {
+    return (
+      <ErrorWindow
+        error={e.message}
+        onClose={() => this.setState({ rows: spinner })}
+      />
+    );
+  };
+
   constructor(props) {
     super(props);
-    this.state = { addPassOpen: false, tableContent: <div>Loading...</div> };
+    this.state = {
+      addPassOpen: false,
+      rows: spinner,
+    };
 
     this.getLogins()
-      .then((res) => this.setState({ tableContent: res }))
-      .catch((e) => this.setState({ tableContent: <div>{e.message}</div> }));
+      .then((res) => this.setState({ rows: res }))
+      .catch(this.handlerError);
   }
 
   async getLogins() {
     const logins = await this.props.api.getLogins(undefined, undefined);
 
     return (
-      <table>
-        <tbody>
-          {logins.map((l) => {
-            return (
-              <tr key={l.id}>
-                <td>
-                  <LoginEntry
-                    login={l}
-                    api={this.props.api}
-                    time={1.5}
-                    onLoginEdited={() => {
-                      debugger;
-                      this.getLogins()
-                        .then((res) => this.setState({ tableContent: res }))
-                        .catch((e) =>
-                          this.setState({
-                            tableContent: <div>{e.message}</div>,
-                          })
-                        );
-                    }}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div class="container-fluid mx-auto">
+        {logins.map((l) => {
+          return (
+            <div key={l.id} class="container border">
+              <LoginEntry
+                login={l}
+                api={this.props.api}
+                time={1.5}
+                onLoginEdited={() => {
+                  this.getLogins()
+                    .then((res) => this.setState({ rows: res }))
+                    .catch(this.handlerError);
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
     );
   }
 
   onAddPassClosed = (reload) => {
     if (reload) {
       this.getLogins()
-        .then((res) => this.setState({ tableContent: res }))
-        .catch((e) => this.setState({ tableContent: <div>{e.message}</div> }));
+        .then((res) => this.setState({ rows: res }))
+        .catch(this.handlerError);
     }
 
     this.setState({ addPassOpen: false });
@@ -257,24 +261,36 @@ class Logins extends React.Component {
   render() {
     return (
       <div>
-        <button onClick={this.props.onLogout}>Log out</button>
-        <button
-          onClick={() =>
-            this.setState((prevState) => {
-              return {
-                addPassOpen: !prevState.addPassOpen,
-              };
-            })
-          }
-        >
-          Add Password
-        </button>
+        <nav class="navbar navbar-expand-sm bg-light">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <button onClick={this.props.onLogout} class="btn btn-danger">
+                Log out
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <nav class="navbar navbar-expand-sm fixed-bottom">
+          <button
+            class="btn btn-light"
+            onClick={() =>
+              this.setState((prevState) => {
+                return {
+                  addPassOpen: !prevState.addPassOpen,
+                };
+              })
+            }
+          >
+            Add Password
+          </button>
+        </nav>
         <AddLoginWindow
           open={this.state.addPassOpen}
           onClose={this.onAddPassClosed}
           api={this.props.api}
         />
-        {this.state.tableContent}
+
+        {this.state.rows}
       </div>
     );
   }

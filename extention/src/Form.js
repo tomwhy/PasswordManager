@@ -1,43 +1,71 @@
 import React from "react";
 
-class Form extends React.Component {
+export function Input(props) {
+  let label = null;
+  if (props.label !== undefined) {
+    label = (
+      <div class="input-group-prepend">
+        <span class="input-group-text">{props.label}</span>
+      </div>
+    );
+  }
+
+  const inputType = props.type !== undefined ? props.type : "text";
+
+  return (
+    <div class="input-group mb-3">
+      {label}
+      <input
+        type={inputType}
+        id={props.name}
+        class="form-control"
+        value={props.value}
+        onChange={props.onChange}
+      />
+    </div>
+  );
+}
+
+export class Form extends React.Component {
   constructor(props) {
     super(props);
 
-    this.state = {};
-    this.children = React.Children.map(this.props.children, (c) => {
-      if (c.props.name !== undefined) {
-        if (
-          this.props.init !== undefined &&
-          this.props.init[c.props.name] !== undefined
-        ) {
-          this.state[c.props.name] = this.props.init[c.props.name];
-        } else {
-          this.state[c.props.name] = "";
-        }
+    let state = {};
 
-        return <span onChange={this.onChange}>{c}</span>;
-      }
-      return c;
+    React.Children.map(this.props.children, (c) => {
+      state[c.props.name] = c.props.init ?? "";
     });
+
+    this.state = state;
   }
 
   onChange = (e) => {
-    if (e.target.name !== undefined) {
-      this.setState({ [e.target.name]: e.target.value });
+    if (e.currentTarget.id !== undefined) {
+      this.setState({ [e.currentTarget.id]: e.currentTarget.value });
     }
   };
 
   onSubmit = (e) => {
     e.preventDefault();
+    console.log(this.state);
     if (this.props.onSubmit !== undefined) {
       this.props.onSubmit(this.state);
     }
   };
 
   render() {
-    return <form onSubmit={this.onSubmit}>{this.children}</form>;
+    const children = React.Children.map(this.props.children, (c) => {
+      if (c.props.name === undefined) {
+        return c;
+      }
+
+      let inputProps = Object.create(c.props);
+      inputProps.onChange = this.onChange;
+      inputProps.value = this.state[inputProps.name];
+
+      return Input(inputProps);
+    });
+
+    return <form onSubmit={this.onSubmit}>{children}</form>;
   }
 }
-
-export default Form;

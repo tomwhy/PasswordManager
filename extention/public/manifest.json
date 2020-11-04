@@ -20,5 +20,6 @@
       ],
       "css": ["/static/css/main.chunk.css"]
     }
-  ]
+  ],
+  "content_security_policy": "script-src 'self' https://maxcdn.bootstrapcdn.com https://cdnjs.cloudflare.com https://ajax.googleapis.com; object-src 'self'"
 }

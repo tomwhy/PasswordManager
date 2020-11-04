@@ -1,5 +1,7 @@
 from flask_app import db
 import secrets
+from sqlalchemy.exc import IntegrityError
+import re
 
 
 class AuthenticationError(Exception):
@@ -17,9 +19,13 @@ class User(db.Model):
 
     @staticmethod
     def create(username: str, password: bytes, email: str):
-        user = User(username=username, password=password, email=email)
-        db.session.add(user)
-        db.session.commit()
+        try:
+            user = User(username=username, password=password, email=email)
+            db.session.add(user)
+            db.session.commit()
+        except IntegrityError as e:
+            raise AuthenticationError("the {} is already in use".format(
+                re.search(r"user\.(.+)", e.args[0])[1]))
 
     @staticmethod
     def validate(username, password) -> int:

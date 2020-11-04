@@ -17,10 +17,16 @@ export function ErrorWindow(props) {
       onClose={onClose}
       nested={props.nested}
     >
-      <div class="modal errorWindow">
+      <div class="container border bg-light">
+        <div class="clearfix d-inline">
+          <span class="clearfix">
+            <button type="button" onClick={onClose} class="close">
+              &times;
+            </button>
+          </span>
+        </div>
         <h3>Error</h3>
         <p class="error">{props.error}</p>
-        <button onClick={onClose}>OK</button>
       </div>
     </Popup>
   );
